@@ -156,12 +156,16 @@ function TruckTransaction() {
               ))}
               <tr>
                 <td className="border px-2 py-1">
-                  <select name="plantId" value={newRow.plantId} onChange={handleNewRowChange} className="w-full border rounded px-1">
-                    <option value="">Select</option>
-                    {plantList.map((p) => (
-                      <option key={p.PlantId} value={p.PlantId}>{p.PlantName}</option>
-                    ))}
-                  </select>
+                  <select
+            value={selectedPlant}
+            onChange={handlePlantChange}
+            className="w-full border px-4 py-2 rounded-md shadow-sm"
+          >
+            <option value="">Select Plant</option>
+            {plantList.map((plant, i) => (
+              <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
+            ))}
+          </select>
                 </td>
                 <td className="border px-2 py-1">
                   <input name="loadingSlipNo" value={newRow.loadingSlipNo} onChange={handleNewRowChange} className="w-full border rounded px-1" />
