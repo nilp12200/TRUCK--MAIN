@@ -1,34 +1,529 @@
-// final 
-// final 
+
+// // GateKeeper.jsx
+// import React, { useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { ToastContainer, toast } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+
+// const API_URL = import.meta.env.VITE_API_URL;
+
+// function GateKeeper() {
+//   const [formData, setFormData] = useState({
+//     truckNo: '',
+//     dispatchDate: new Date().toISOString().split('T')[0],
+//     invoiceNo: '',
+//     remarks: 'This is a system-generated remark.',
+//   });
+
+//   const [plantList, setPlantList] = useState([]);
+//   const [selectedPlant, setSelectedPlant] = useState('');
+//   const [truckNumbers, setTruckNumbers] = useState([]);
+//   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
+
+//   useEffect(() => {
+//     axios.get(`${API_URL}/api/plants`)
+//       .then(res => setPlantList(res.data))
+//       .catch(err => console.error('Error fetching plants:', err));
+//   }, []);
+
+//   useEffect(() => {
+//     if (selectedPlant) {
+//       axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
+//         .then(res => setTruckNumbers(res.data))
+//         .catch(err => console.error('Error fetching trucks:', err));
+//     }
+//   }, [selectedPlant]);
+
+//   useEffect(() => {
+//     if (selectedPlant) {
+//       axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
+//         .then(res => setCheckedInTrucks(res.data))
+//         .catch(err => console.error('Error fetching checked-in trucks:', err));
+//     }
+//   }, [selectedPlant]);
+
+//   const handleChange = (e) => {
+//     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+//   };
+
+//   const handlePlantChange = (e) => {
+//     setSelectedPlant(e.target.value);
+//     setCheckedInTrucks([]);
+//     setFormData(prev => ({
+//       ...prev,
+//       truckNo: '',
+//       dispatchDate: new Date().toISOString().split('T')[0],
+//     }));
+//   };
+
+//   const handleTruckSelect = async (truckNo) => {
+//     setFormData(prev => ({ ...prev, truckNo }));
+
+//     try {
+//       const res = await axios.get(`${API_URL}/api/fetch-remarks`, {
+//         params: {
+//           plantName: selectedPlant,
+//           truckNo,
+//         }
+//       });
+
+//       setFormData(prev => ({
+//         ...prev,
+//         remarks: res.data.remarks || 'No remarks available.'
+//       }));
+//     } catch (err) {
+//       console.error('Error fetching remarks:', err);
+//       setFormData(prev => ({
+//         ...prev,
+//         remarks: 'No remarks available or error fetching remarks.'
+//       }));
+//     }
+//   };
+
+//   const handleCheckedInClick = (truckNo) => {
+//     setFormData(prev => ({ ...prev, truckNo }));
+//   };
+
+//   const handleSubmit = async (type) => {
+//     const { truckNo } = formData;
+//     if (!truckNo) {
+//       toast.warn('🚛 Please select a truck number.');
+//       return;
+//     }
+
+//     try {
+//       const res = await axios.post(`${API_URL}/api/update-truck-status`, {
+//         truckNo,
+//         plantName: selectedPlant,
+//         type
+//       });
+
+//       setTruckNumbers(prev => prev.filter(t => t.TruckNo !== truckNo));
+
+//       if (type === 'Check In' && !checkedInTrucks.includes(truckNo)) {
+//         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
+//       }
+
+//       toast.success(res.data.message);
+//       setFormData(prev => ({ ...prev, truckNo: '' }));
+//     } catch (err) {
+//       console.error('Error:', err);
+//       if (err.response?.status === 400 && err.response.data?.message) {
+//         toast.error(err.response.data.message);
+//       } else {
+//         toast.error('⚠️ Error while updating status');
+//       }
+//     }
+//   };
+
+//   return (
+//     <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
+//       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+//         {/* Left Panel */}
+//         <div className="col-span-1 space-y-4">
+//           <select
+//             value={selectedPlant}
+//             onChange={handlePlantChange}
+//             className="w-full border px-4 py-2 rounded-md shadow-sm"
+//           >
+//             <option value="">Select Plant</option>
+//             {plantList.map((plant, i) => (
+//               <option key={i} value={plant.PlantName}>{plant.PlantName}</option>
+//             ))}
+//           </select>
+
+//           <div className="bg-blue-100 rounded-lg p-4 h-[300px] overflow-y-auto">
+//             <h3 className="text-md font-semibold text-blue-800 mb-2">Truck List</h3>
+//             <ul className="space-y-1 text-sm text-gray-700 cursor-pointer">
+//               {truckNumbers.map((truck, index) => (
+//                 <li
+//                   key={index}
+//                   onClick={() => handleTruckSelect(truck.TruckNo)}
+//                   className="hover:text-blue-600"
+//                 >
+//                   {truck.TruckNo}
+//                 </li>
+//               ))}
+//               {truckNumbers.length === 0 && (
+//                 <li className="text-gray-400 italic">No trucks available</li>
+//               )}
+//             </ul>
+//           </div>
+//         </div>
+
+//         {/* Center Panel - Form */}
+//         <div className="col-span-1 space-y-4">
+//           <img
+//             src="https://pngimg.com/uploads/truck/truck_PNG16234.png"
+//             alt="Truck"
+//             className="w-full object-contain"
+//           />
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Truck No.</label>
+//             <input
+//               name="truckNo"
+//               value={formData.truckNo}
+//               onChange={handleChange}
+//               className="w-full border rounded px-4 py-2 shadow-sm"
+//               placeholder="Enter Truck No"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Dispatch Date</label>
+//             <input
+//               name="dispatchDate"
+//               value={formData.dispatchDate}
+//               onChange={handleChange}
+//               type="date"
+//               className="w-full border rounded px-4 py-2 shadow-sm"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Invoice Number</label>
+//             <input
+//               name="invoiceNo"
+//               value={formData.invoiceNo}
+//               onChange={handleChange}
+//               className="w-full border rounded px-4 py-2 shadow-sm"
+//               placeholder="Invoice No"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Remarks</label>
+//             <textarea
+//               name="remarks"
+//               value={formData.remarks}
+//               readOnly
+//               className="w-full border rounded px-4 py-2 shadow-sm bg-gray-100 text-gray-700 resize-none h-24"
+//             />
+//           </div>
+
+//           <div className="flex justify-between mt-4">
+//             <button
+//               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+//               onClick={() => handleSubmit('Check In')}
+//             >
+//               Check In
+//             </button>
+//             <button
+//               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+//               onClick={() => handleSubmit('Check Out')}
+//             >
+//               Check Out
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Right Panel - Checked-In Trucks */}
+//         <div className="col-span-1">
+//           <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
+//             <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
+//             <ul className="space-y-1 text-sm text-gray-700">
+//               {checkedInTrucks.map((truck, idx) => (
+//                 <li
+//                   key={idx}
+//                   className="hover:text-green-600 cursor-pointer"
+//                   onClick={() => handleCheckedInClick(truck.TruckNo)}
+//                 >
+//                   {truck.TruckNo}
+//                 </li>
+//               ))}
+//               {checkedInTrucks.length === 0 && (
+//                 <li className="text-gray-400 italic">No checked-in trucks</li>
+//               )}
+//             </ul>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Toast Container */}
+//       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
+//     </div>
+//   );
+// }
+
+// export default GateKeeper;
+
+
+// import React, { useEffect, useState } from 'react';
+// import axios from 'axios';
+// import { ToastContainer, toast } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
+
+// const API_URL = import.meta.env.VITE_API_URL;
+
+// function GateKeeper() {
+//   const [formData, setFormData] = useState({
+//     truckNo: '',
+//     dispatchDate: new Date().toISOString().split('T')[0],
+//     invoiceNo: '',
+//     remarks: 'This is a system-generated remark.',
+//   });
+
+//   const [plantList, setPlantList] = useState([]);
+//   const [selectedPlant, setSelectedPlant] = useState('');
+//   const [truckNumbers, setTruckNumbers] = useState([]);
+//   const [checkedInTrucks, setCheckedInTrucks] = useState([]);
+
+//   useEffect(() => {
+//     axios.get(`${API_URL}/api/plants`)
+//       .then(res => setPlantList(res.data))
+//       .catch(err => console.error('Error fetching plants:', err));
+//   }, []);
+
+//   useEffect(() => {
+//     if (selectedPlant) {
+//       axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
+//         .then(res => setTruckNumbers(res.data))
+//         .catch(err => console.error('Error fetching trucks:', err));
+//     }
+//   }, [selectedPlant]);
+
+//   useEffect(() => {
+//     if (selectedPlant) {
+//       axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
+//         .then(res => setCheckedInTrucks(res.data))
+//         .catch(err => console.error('Error fetching checked-in trucks:', err));
+//     }
+//   }, [selectedPlant]);
+
+//   const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
+//   const getPlantName = (plant) => plant.PlantName || plant.plantname || plant.plant_name || '';
+
+//   const handleChange = (e) => {
+//     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+//   };
+
+//   const handlePlantChange = (e) => {
+//     setSelectedPlant(e.target.value);
+//     setCheckedInTrucks([]);
+//     setFormData(prev => ({
+//       ...prev,
+//       truckNo: '',
+//       dispatchDate: new Date().toISOString().split('T')[0],
+//     }));
+//   };
+
+//   const handleTruckSelect = async (truckNo) => {
+//     setFormData(prev => ({ ...prev, truckNo }));
+
+//     try {
+//       const res = await axios.get(`${API_URL}/api/fetch-remarks`, {
+//         params: {
+//           plantName: selectedPlant,
+//           truckNo,
+//         }
+//       });
+
+//       setFormData(prev => ({
+//         ...prev,
+//         remarks: res.data.remarks || 'No remarks available.'
+//       }));
+//     } catch (err) {
+//       console.error('Error fetching remarks:', err);
+//       setFormData(prev => ({
+//         ...prev,
+//         remarks: 'No remarks available or error fetching remarks.'
+//       }));
+//     }
+//   };
+
+//   const handleCheckedInClick = (truckNo) => {
+//     setFormData(prev => ({ ...prev, truckNo }));
+//   };
+
+//   const handleSubmit = async (type) => {
+//     const { truckNo } = formData;
+//     if (!truckNo) {
+//       toast.warn('🚛 Please select a truck number.');
+//       return;
+//     }
+
+//     try {
+//       const res = await axios.post(`${API_URL}/api/update-truck-status`, {
+//         truckNo,
+//         plantName: selectedPlant,
+//         type
+//       });
+
+//       setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+
+//       if (type === 'Check In' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+//         setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
+//       }
+
+//       toast.success(res.data.message);
+//       setFormData(prev => ({ ...prev, truckNo: '' }));
+//     } catch (err) {
+//       console.error('Error:', err);
+//       if (err.response?.status === 400 && err.response.data?.message) {
+//         toast.error(err.response.data.message);
+//       } else {
+//         toast.error('⚠️ Error while updating status');
+//       }
+//     }
+//   };
+
+//   return (
+//     <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
+//       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+//         {/* Left Panel */}
+//         <div className="col-span-1 space-y-4">
+//           <select
+//             value={selectedPlant}
+//             onChange={handlePlantChange}
+//             className="w-full border px-4 py-2 rounded-md shadow-sm"
+//           >
+//             <option value="">Select Plant</option>
+//             {plantList.map((plant, i) => (
+//               <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
+//             ))}
+//           </select>
+
+//           <div className="bg-blue-100 rounded-lg p-4 h-[300px] overflow-y-auto">
+//             <h3 className="text-md font-semibold text-blue-800 mb-2">Truck List</h3>
+//             <ul className="space-y-1 text-sm text-gray-700 cursor-pointer">
+//               {truckNumbers.map((truck, index) => (
+//                 <li
+//                   key={index}
+//                   onClick={() => handleTruckSelect(getTruckNo(truck))}
+//                   className="hover:text-blue-600"
+//                 >
+//                   {getTruckNo(truck)}
+//                 </li>
+//               ))}
+//               {truckNumbers.length === 0 && (
+//                 <li className="text-gray-400 italic">No trucks available</li>
+//               )}
+//             </ul>
+//           </div>
+//         </div>
+
+//         {/* Center Panel - Form */}
+//         <div className="col-span-1 space-y-4">
+//           <img
+//             src="https://pngimg.com/uploads/truck/truck_PNG16234.png"
+//             alt="Truck"
+//             className="w-full object-contain"
+//           />
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Truck No.</label>
+//             <input
+//               name="truckNo"
+//               value={formData.truckNo}
+//               onChange={handleChange}
+//               className="w-full border rounded px-4 py-2 shadow-sm"
+//               placeholder="Enter Truck No"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Dispatch Date</label>
+//             <input
+//               name="dispatchDate"
+//               value={formData.dispatchDate}
+//               onChange={handleChange}
+//               type="date"
+//               className="w-full border rounded px-4 py-2 shadow-sm"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Invoice Number</label>
+//             <input
+//               name="invoiceNo"
+//               value={formData.invoiceNo}
+//               onChange={handleChange}
+//               className="w-full border rounded px-4 py-2 shadow-sm"
+//               placeholder="Invoice No"
+//             />
+//           </div>
+
+//           <div>
+//             <label className="block font-semibold text-gray-700">Remarks</label>
+//             <textarea
+//               name="remarks"
+//               value={formData.remarks}
+//               readOnly
+//               className="w-full border rounded px-4 py-2 shadow-sm bg-gray-100 text-gray-700 resize-none h-24"
+//             />
+//           </div>
+
+//           <div className="flex justify-between mt-4">
+//             <button
+//               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+//               onClick={() => handleSubmit('Check In')}
+//             >
+//               Check In
+//             </button>
+//             <button
+//               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+//               onClick={() => handleSubmit('Check Out')}
+//             >
+//               Check Out
+//             </button>
+//           </div>
+//         </div>
+
+//         {/* Right Panel - Checked-In Trucks */}
+//         <div className="col-span-1">
+//           <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
+//             <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
+//             <ul className="space-y-1 text-sm text-gray-700">
+//               {checkedInTrucks.map((truck, idx) => (
+//                 <li
+//                   key={idx}
+//                   className="hover:text-green-600 cursor-pointer"
+//                   onClick={() => handleCheckedInClick(getTruckNo(truck))}
+//                 >
+//                   {getTruckNo(truck)}
+//                 </li>
+//               ))}
+//               {checkedInTrucks.length === 0 && (
+//                 <li className="text-gray-400 italic">No checked-in trucks</li>
+//               )}
+//             </ul>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Toast Container */}
+//       <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
+//     </div>
+//   );
+// }
+
+// export default GateKeeper;
+
+
+
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function TruckTransaction() {
+function GateKeeper() {
   const [formData, setFormData] = useState({
     truckNo: '',
-    transactionDate: '',
-    cityName: '',
-    transporter: '',
-    amountPerTon: '',
-    truckWeight: '',
-    deliverPoint: '',
-    remarks: ''
+    dispatchDate: new Date().toISOString().split('T')[0],
+    invoiceNo: '',
+    remarks: 'This is a system-generated remark.',
   });
 
   const [plantList, setPlantList] = useState([]);
-  const [tableData, setTableData] = useState([]);
-  const [newRow, setNewRow] = useState({
-    plantId: '',
-    loadingSlipNo: '',
-    qty: '',
-    priority: '',
-    remarks: '',
-    freight: 'To Pay'
-  });
-
-  const [message, setMessage] = useState('');
+  const [selectedPlant, setSelectedPlant] = useState('');
+  const [truckNumbers, setTruckNumbers] = useState([]);
+  const [checkedInTrucks, setCheckedInTrucks] = useState([]);
 
   useEffect(() => {
     axios.get(`${API_URL}/api/plants`)
@@ -36,127 +531,106 @@ function TruckTransaction() {
       .catch(err => console.error('Error fetching plants:', err));
   }, []);
 
+  useEffect(() => {
+    if (selectedPlant) {
+      axios.get(`${API_URL}/api/trucks?plantName=${selectedPlant}`)
+        .then(res => setTruckNumbers(res.data))
+        .catch(err => console.error('Error fetching trucks:', err));
+    }
+  }, [selectedPlant]);
+
+  useEffect(() => {
+    if (selectedPlant) {
+      axios.get(`${API_URL}/api/checked-in-trucks?plantName=${selectedPlant}`)
+        .then(res => setCheckedInTrucks(res.data))
+        .catch(err => console.error('Error fetching checked-in trucks:', err));
+    }
+  }, [selectedPlant]);
+
+  const getTruckNo = (truck) => truck.TruckNo || truck.truckno || truck.truck_no || '';
+  const getPlantName = (plant) => plant.PlantName || plant.plantname || plant.plant_name || plant || '';
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleNewRowChange = (e) => {
-    setNewRow({ ...newRow, [e.target.name]: e.target.value });
+  const handlePlantChange = (e) => {
+    setSelectedPlant(e.target.value);
+    setCheckedInTrucks([]);
+    setFormData(prev => ({
+      ...prev,
+      truckNo: '',
+      dispatchDate: new Date().toISOString().split('T')[0],
+    }));
   };
 
-  const getPlantNameById = (id) => {
-    const plant = plantList.find(p => p.PlantId === parseInt(id));
-    return plant ? plant.PlantName : '';
-  };
+  const handleTruckSelect = async (truckNo) => {
+    setFormData(prev => ({ ...prev, truckNo }));
 
-  const addRow = () => {
-    if (newRow.plantId && newRow.loadingSlipNo && newRow.qty) {
-      setTableData([...tableData, newRow]);
-      setNewRow({
-        plantId: '',
-        loadingSlipNo: '',
-        qty: '',
-        priority: '',
-        remarks: '',
-        freight: 'To Pay'
+    try {
+      const res = await axios.get(`${API_URL}/api/fetch-remarks`, {
+        params: {
+          plantName: selectedPlant,
+          truckNo,
+        }
       });
+
+      setFormData(prev => ({
+        ...prev,
+        remarks: res.data.remarks || 'No remarks available.'
+      }));
+    } catch (err) {
+      console.error('Error fetching remarks:', err);
+      setFormData(prev => ({
+        ...prev,
+        remarks: 'No remarks available or error fetching remarks.'
+      }));
     }
   };
 
-  const handleSubmit = async () => {
-    let finalTableData = [...tableData];
+  const handleCheckedInClick = (truckNo) => {
+    setFormData(prev => ({ ...prev, truckNo }));
+  };
 
-    if (newRow.plantId && newRow.loadingSlipNo && newRow.qty) {
-      finalTableData.push(newRow);
+  const handleSubmit = async (type) => {
+    const { truckNo } = formData;
+    if (!truckNo) {
+      toast.warn('🚛 Please select a truck number.');
+      return;
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/truck-transaction`, {
-        formData,
-        tableData: finalTableData
+      const res = await axios.post(`${API_URL}/api/update-truck-status`, {
+        truckNo,
+        plantName: selectedPlant,
+        type
       });
 
-      if (response.data.success) {
-        setMessage('✅ Transaction saved successfully!');
-        setFormData({
-          truckNo: '',
-          transactionDate: '',
-          cityName: '',
-          transporter: '',
-          amountPerTon: '',
-          truckWeight: '',
-          deliverPoint: '',
-          remarks: ''
-        });
-        setTableData([]);
-        setNewRow({
-          plantId: '',
-          loadingSlipNo: '',
-          qty: '',
-          priority: '',
-          remarks: '',
-          freight: 'To Pay'
-        });
-      } else {
-        setMessage('❌ Error saving transaction.');
+      setTruckNumbers(prev => prev.filter(t => getTruckNo(t) !== truckNo));
+
+      if (type === 'Check In' && !checkedInTrucks.some(t => getTruckNo(t) === truckNo)) {
+        setCheckedInTrucks(prev => [...prev, { TruckNo: truckNo }]);
       }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setMessage('❌ Server error while submitting data.');
+
+      toast.success(res.data.message);
+      setFormData(prev => ({ ...prev, truckNo: '' }));
+    } catch (err) {
+      console.error('Error:', err);
+      if (err.response?.status === 400 && err.response.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error('⚠️ Error while updating status');
+      }
     }
   };
 
   return (
-    <div className="p-4 md:p-10 bg-gray-100 min-h-screen">
-      <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-center mb-6">Truck Transaction</h1>
+    <div className="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-6">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block font-medium">Truck No</label>
-            <input name="truckNo" value={formData.truckNo} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-          </div>
-          <div>
-            <label className="block font-medium">Transaction Date</label>
-            <input type="date" name="transactionDate" value={formData.transactionDate} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-          </div>
-          <div>
-            <label className="block font-medium">City Name</label>
-            <input name="cityName" value={formData.cityName} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-          </div>
-          <div>
-            <label className="block font-medium">Transporter</label>
-            <input name="transporter" value={formData.transporter} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-          </div>
-        </div>
-
-        <h3 className="text-lg font-semibold mt-6 mb-2">Loading Details</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full border text-sm text-left">
-            <thead className="bg-yellow-200">
-              <tr>
-                <th className="border px-2 py-1">Plant</th>
-                <th className="border px-2 py-1">Slip No</th>
-                <th className="border px-2 py-1">Qty</th>
-                <th className="border px-2 py-1">Priority</th>
-                <th className="border px-2 py-1">Remarks</th>
-                <th className="border px-2 py-1">Freight</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tableData.map((row, i) => (
-                <tr key={i}>
-                  <td className="border px-2 py-1">{getPlantNameById(row.plantId)}</td>
-                  <td className="border px-2 py-1">{row.loadingSlipNo}</td>
-                  <td className="border px-2 py-1">{row.qty}</td>
-                  <td className="border px-2 py-1">{row.priority}</td>
-                  <td className="border px-2 py-1">{row.remarks}</td>
-                  <td className="border px-2 py-1">{row.freight}</td>
-                </tr>
-              ))}
-              <tr>
-                <td className="border px-2 py-1">
-                  <select
+        {/* Left Panel */}
+        <div className="col-span-1 space-y-4">
+          <select
             value={selectedPlant}
             onChange={handlePlantChange}
             className="w-full border px-4 py-2 rounded-md shadow-sm"
@@ -166,76 +640,119 @@ function TruckTransaction() {
               <option key={i} value={getPlantName(plant)}>{getPlantName(plant)}</option>
             ))}
           </select>
-                </td>
-                <td className="border px-2 py-1">
-                  <input name="loadingSlipNo" value={newRow.loadingSlipNo} onChange={handleNewRowChange} className="w-full border rounded px-1" />
-                </td>
-                <td className="border px-2 py-1">
-                  <input name="qty" value={newRow.qty} onChange={handleNewRowChange} className="w-full border rounded px-1" />
-                </td>
-                <td className="border px-2 py-1">
-                  <input name="priority" value={newRow.priority} onChange={handleNewRowChange} className="w-full border rounded px-1" />
-                </td>
-                <td className="border px-2 py-1">
-                  <input name="remarks" value={newRow.remarks} onChange={handleNewRowChange} className="w-full border rounded px-1" />
-                </td>
-                <td className="border px-2 py-1">
-                  <select name="freight" value={newRow.freight} onChange={handleNewRowChange} className="w-full border rounded px-1">
-                    <option value="To Pay">To Pay</option>
-                    <option value="Paid">Paid</option>
-                  </select>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
 
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={addRow}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Add Row
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <div>
-            <label className="block font-medium">Amount Per Ton</label>
-            <input name="amountPerTon" value={formData.amountPerTon} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-          </div>
-          <div>
-            <label className="block font-medium">Deliver Point</label>
-            <input name="deliverPoint" value={formData.deliverPoint} onChange={handleChange} className="w-full border rounded px-2 py-1" />
-          </div>
-          <div>
-            <label className="block font-medium">Truck Weight (In Ton)</label>
-            <input name="truckWeight" value={formData.truckWeight} onChange={handleChange} className="w-full border rounded px-2 py-1" />
+          <div className="bg-blue-100 rounded-lg p-4 h-[300px] overflow-y-auto">
+            <h3 className="text-md font-semibold text-blue-800 mb-2">Truck List</h3>
+            <ul className="space-y-1 text-sm text-gray-700 cursor-pointer">
+              {truckNumbers.map((truck, index) => (
+                <li
+                  key={index}
+                  onClick={() => handleTruckSelect(getTruckNo(truck))}
+                  className="hover:text-blue-600"
+                >
+                  {getTruckNo(truck)}
+                </li>
+              ))}
+              {truckNumbers.length === 0 && (
+                <li className="text-gray-400 italic">No trucks available</li>
+              )}
+            </ul>
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="block font-medium">Remarks</label>
-          <textarea name="remarks" value={formData.remarks} onChange={handleChange} className="w-full border rounded px-2 py-1" rows="4"></textarea>
+        {/* Center Panel - Form */}
+        <div className="col-span-1 space-y-4">
+          <img
+            src="https://pngimg.com/uploads/truck/truck_PNG16234.png"
+            alt="Truck"
+            className="w-full object-contain"
+          />
+
+          <div>
+            <label className="block font-semibold text-gray-700">Truck No.</label>
+            <input
+              name="truckNo"
+              value={formData.truckNo}
+              onChange={handleChange}
+              className="w-full border rounded px-4 py-2 shadow-sm"
+              placeholder="Enter Truck No"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-gray-700">Dispatch Date</label>
+            <input
+              name="dispatchDate"
+              value={formData.dispatchDate}
+              onChange={handleChange}
+              type="date"
+              className="w-full border rounded px-4 py-2 shadow-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-gray-700">Invoice Number</label>
+            <input
+              name="invoiceNo"
+              value={formData.invoiceNo}
+              onChange={handleChange}
+              className="w-full border rounded px-4 py-2 shadow-sm"
+              placeholder="Invoice No"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold text-gray-700">Remarks</label>
+            <textarea
+              name="remarks"
+              value={formData.remarks}
+              readOnly
+              className="w-full border rounded px-4 py-2 shadow-sm bg-gray-100 text-gray-700 resize-none h-24"
+            />
+          </div>
+
+          <div className="flex justify-between mt-4">
+            <button
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              onClick={() => handleSubmit('Check In')}
+            >
+              Check In
+            </button>
+            <button
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              onClick={() => handleSubmit('Check Out')}
+            >
+              Check Out
+            </button>
+          </div>
         </div>
 
-        <div className="text-center mt-6">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
-          >
-            Submit
-          </button>
+        {/* Right Panel - Checked-In Trucks */}
+        <div className="col-span-1">
+          <div className="bg-green-100 rounded-lg p-4 h-full overflow-y-auto">
+            <h3 className="text-lg font-bold text-green-800 mb-2">Checked In Trucks</h3>
+            <ul className="space-y-1 text-sm text-gray-700">
+              {checkedInTrucks.map((truck, idx) => (
+                <li
+                  key={idx}
+                  className="hover:text-green-600 cursor-pointer"
+                  onClick={() => handleCheckedInClick(getTruckNo(truck))}
+                >
+                  {getTruckNo(truck)}
+                </li>
+              ))}
+              {checkedInTrucks.length === 0 && (
+                <li className="text-gray-400 italic">No checked-in trucks</li>
+              )}
+            </ul>
+          </div>
         </div>
-
-        {message && (
-          <p className="mt-4 text-center text-lg text-blue-600">{message}</p>
-        )}
       </div>
+
+      {/* Toast Container */}
+      <ToastContainer position="top-center" autoClose={3000} hideProgressBar />
     </div>
   );
 }
 
-export default TruckTransaction;
+export default GateKeeper;
