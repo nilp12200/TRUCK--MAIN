@@ -37,6 +37,7 @@ function TruckTransaction() {
       .catch(err => console.error('Error fetching plants:', err));
   }, []);
 
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
