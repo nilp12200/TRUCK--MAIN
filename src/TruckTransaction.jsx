@@ -630,7 +630,7 @@ function GateKeeper() {
 
         {/* Left Panel */}
         <div className="col-span-1 space-y-4">
-          <select
+        <select
             value={selectedPlant}
             onChange={handlePlantChange}
             className="w-full border px-4 py-2 rounded-md shadow-sm"
