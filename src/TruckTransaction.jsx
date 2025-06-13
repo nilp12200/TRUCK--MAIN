@@ -1,7 +1,5 @@
 // final 
 // final 
-
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -22,7 +20,7 @@ function TruckTransaction() {
   const [plantList, setPlantList] = useState([]);
   const [tableData, setTableData] = useState([]);
   const [newRow, setNewRow] = useState({
-    plantName: '',
+    plantId: '',
     loadingSlipNo: '',
     qty: '',
     priority: '',
@@ -38,7 +36,6 @@ function TruckTransaction() {
       .catch(err => console.error('Error fetching plants:', err));
   }, []);
 
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -47,11 +44,16 @@ function TruckTransaction() {
     setNewRow({ ...newRow, [e.target.name]: e.target.value });
   };
 
+  const getPlantNameById = (id) => {
+    const plant = plantList.find(p => p.PlantId === parseInt(id));
+    return plant ? plant.PlantName : '';
+  };
+
   const addRow = () => {
-    if (newRow.plantName && newRow.loadingSlipNo && newRow.qty) {
+    if (newRow.plantId && newRow.loadingSlipNo && newRow.qty) {
       setTableData([...tableData, newRow]);
       setNewRow({
-        plantName: '',
+        plantId: '',
         loadingSlipNo: '',
         qty: '',
         priority: '',
@@ -64,7 +66,7 @@ function TruckTransaction() {
   const handleSubmit = async () => {
     let finalTableData = [...tableData];
 
-    if (newRow.plantName && newRow.loadingSlipNo && newRow.qty) {
+    if (newRow.plantId && newRow.loadingSlipNo && newRow.qty) {
       finalTableData.push(newRow);
     }
 
@@ -88,7 +90,7 @@ function TruckTransaction() {
         });
         setTableData([]);
         setNewRow({
-          plantName: '',
+          plantId: '',
           loadingSlipNo: '',
           qty: '',
           priority: '',
@@ -128,7 +130,6 @@ function TruckTransaction() {
           </div>
         </div>
 
-        {/* Loading Details Table */}
         <h3 className="text-lg font-semibold mt-6 mb-2">Loading Details</h3>
         <div className="overflow-x-auto">
           <table className="w-full border text-sm text-left">
@@ -145,7 +146,7 @@ function TruckTransaction() {
             <tbody>
               {tableData.map((row, i) => (
                 <tr key={i}>
-                  <td className="border px-2 py-1">{row.plantName}</td>
+                  <td className="border px-2 py-1">{getPlantNameById(row.plantId)}</td>
                   <td className="border px-2 py-1">{row.loadingSlipNo}</td>
                   <td className="border px-2 py-1">{row.qty}</td>
                   <td className="border px-2 py-1">{row.priority}</td>
@@ -155,10 +156,10 @@ function TruckTransaction() {
               ))}
               <tr>
                 <td className="border px-2 py-1">
-                  <select name="plantName" value={newRow.plantName} onChange={handleNewRowChange} className="w-full border rounded px-1">
+                  <select name="plantId" value={newRow.plantId} onChange={handleNewRowChange} className="w-full border rounded px-1">
                     <option value="">Select</option>
-                    {plantList.map((p, i) => (
-                      <option key={i} value={p.PlantName}>{p.PlantName}</option>
+                    {plantList.map((p) => (
+                      <option key={p.PlantId} value={p.PlantId}>{p.PlantName}</option>
                     ))}
                   </select>
                 </td>
