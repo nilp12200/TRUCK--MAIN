@@ -402,6 +402,128 @@
 // }
 
 
+// import React, { useState, useEffect } from 'react';
+// import axios from 'axios';
+
+// const API_URL = import.meta.env.VITE_API_URL;
+
+// export default function PlantMaster() {
+//   const [plantList, setPlantList] = useState([]);
+//   const [selectedPlantName, setSelectedPlantName] = useState('');
+//   const [formData, setFormData] = useState({
+//     plantId: null,
+//     plantName: '',
+//     plantAddress: '',
+//     contactPerson: '',
+//     mobileNo: '',
+//     remarks: ''
+//   });
+
+//   // Fetch dropdown list
+//   useEffect(() => {
+//     const fetchPlants = async () => {
+//       try {
+//         const res = await axios.get(`${API_URL}/api/plants`);
+//         setPlantList(res.data);
+//       } catch (err) {
+//         console.error('Failed to fetch plant list', err);
+//       }
+//     };
+//     fetchPlants();
+//   }, []);
+
+//   // Load plant data on selection
+//   const handleLoad = async () => {
+//     try {
+//       const res = await axios.get(`${API_URL}/api/plantmaster/${selectedPlantName}`);
+//       setFormData({
+//         plantId: res.data.plantid,
+//         plantName: res.data.plantname,
+//         plantAddress: res.data.plantaddress,
+//         contactPerson: res.data.contactperson,
+//         mobileNo: res.data.mobileno,
+//         remarks: res.data.remarks
+//       });
+//     } catch (err) {
+//       console.error('Error loading plant:', err);
+//       alert('Plant not found.');
+//     }
+//   };
+
+//   const handleChange = (e) => {
+//     setFormData({ ...formData, [e.target.name]: e.target.value });
+//   };
+
+//   // Submit updated data
+//   const handleUpdate = async () => {
+//     if (!formData.plantId) return alert("No plant selected to update.");
+//     try {
+//       await axios.put(`${API_URL}/api/plantmaster/update/${formData.plantId}`, formData);
+//       alert('✅ Plant updated successfully');
+//     } catch (err) {
+//       console.error('Update failed:', err);
+//       alert('❌ Failed to update plant');
+//     }
+//   };
+
+//   return (
+//     <div style={{ padding: '20px' }}>
+//       <h2>🌱 Plant Master</h2>
+
+//       {/* Dropdown to select plant */}
+//       <select
+//         value={selectedPlantName}
+//         onChange={(e) => setSelectedPlantName(e.target.value)}
+//       >
+//         <option value="">-- Select Plant --</option>
+//         {plantList.map((plant) => (
+//           <option key={plant.plantid} value={plant.plantname}>
+//             {plant.plantname}
+//           </option>
+//         ))}
+//       </select>
+
+//       <button onClick={handleLoad}>Edit</button>
+
+//       {/* Form Fields */}
+//       <div style={{ marginTop: '20px' }}>
+//         <input
+//           name="plantName"
+//           value={formData.plantName}
+//           onChange={handleChange}
+//           placeholder="Plant Name"
+//         />
+//         <input
+//           name="plantAddress"
+//           value={formData.plantAddress}
+//           onChange={handleChange}
+//           placeholder="Address"
+//         />
+//         <input
+//           name="contactPerson"
+//           value={formData.contactPerson}
+//           onChange={handleChange}
+//           placeholder="Contact Person"
+//         />
+//         <input
+//           name="mobileNo"
+//           value={formData.mobileNo}
+//           onChange={handleChange}
+//           placeholder="Mobile No"
+//         />
+//         <input
+//           name="remarks"
+//           value={formData.remarks}
+//           onChange={handleChange}
+//           placeholder="Remarks"
+//         />
+//         <button onClick={handleUpdate}>Save Changes</button>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -409,116 +531,74 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function PlantMaster() {
   const [plantList, setPlantList] = useState([]);
-  const [selectedPlantName, setSelectedPlantName] = useState('');
   const [formData, setFormData] = useState({
-    plantId: null,
+    plantId: '',
     plantName: '',
     plantAddress: '',
     contactPerson: '',
     mobileNo: '',
-    remarks: ''
+    remarks: '',
   });
 
-  // Fetch dropdown list
+  const [selectedPlantName, setSelectedPlantName] = useState('');
+
+  // Fetch all plants (initial load)
   useEffect(() => {
-    const fetchPlants = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/plants`);
-        setPlantList(res.data);
-      } catch (err) {
-        console.error('Failed to fetch plant list', err);
-      }
-    };
-    fetchPlants();
+    axios.get(`${API_URL}/api/plantmaster`)
+      .then(res => setPlantList(res.data))
+      .catch(err => console.error('Error fetching list:', err));
   }, []);
 
-  // Load plant data on selection
-  const handleLoad = async () => {
+  // Fetch selected plant
+  const handleEditClick = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/plantmaster/${selectedPlantName}`);
-      setFormData({
-        plantId: res.data.plantid,
-        plantName: res.data.plantname,
-        plantAddress: res.data.plantaddress,
-        contactPerson: res.data.contactperson,
-        mobileNo: res.data.mobileno,
-        remarks: res.data.remarks
-      });
-    } catch (err) {
-      console.error('Error loading plant:', err);
-      alert('Plant not found.');
+      setFormData(res.data);
+    } catch (error) {
+      alert("❌ Error fetching plant data");
+      console.error(error);
     }
   };
 
+  // Update form input
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Submit updated data
-  const handleUpdate = async () => {
-    if (!formData.plantId) return alert("No plant selected to update.");
+  // Save edited plant
+  const handleSave = async () => {
     try {
-      await axios.put(`${API_URL}/api/plantmaster/update/${formData.plantId}`, formData);
-      alert('✅ Plant updated successfully');
-    } catch (err) {
-      console.error('Update failed:', err);
-      alert('❌ Failed to update plant');
+      await axios.put(`${API_URL}/api/plantmaster/${formData.plantId}`, formData);
+      alert('✅ Plant updated');
+    } catch (error) {
+      alert('❌ Error updating plant');
+      console.error(error);
     }
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>🌱 Plant Master</h2>
+    <div>
+      <h2>Plant Master</h2>
 
-      {/* Dropdown to select plant */}
-      <select
-        value={selectedPlantName}
-        onChange={(e) => setSelectedPlantName(e.target.value)}
-      >
+      <select value={selectedPlantName} onChange={e => setSelectedPlantName(e.target.value)}>
         <option value="">-- Select Plant --</option>
-        {plantList.map((plant) => (
-          <option key={plant.plantid} value={plant.plantname}>
-            {plant.plantname}
-          </option>
+        {plantList.map(p => (
+          <option key={p.PlantID} value={p.PlantName}>{p.PlantName}</option>
         ))}
       </select>
 
-      <button onClick={handleLoad}>Edit</button>
+      <button onClick={handleEditClick}>Edit</button>
 
-      {/* Form Fields */}
-      <div style={{ marginTop: '20px' }}>
-        <input
-          name="plantName"
-          value={formData.plantName}
-          onChange={handleChange}
-          placeholder="Plant Name"
-        />
-        <input
-          name="plantAddress"
-          value={formData.plantAddress}
-          onChange={handleChange}
-          placeholder="Address"
-        />
-        <input
-          name="contactPerson"
-          value={formData.contactPerson}
-          onChange={handleChange}
-          placeholder="Contact Person"
-        />
-        <input
-          name="mobileNo"
-          value={formData.mobileNo}
-          onChange={handleChange}
-          placeholder="Mobile No"
-        />
-        <input
-          name="remarks"
-          value={formData.remarks}
-          onChange={handleChange}
-          placeholder="Remarks"
-        />
-        <button onClick={handleUpdate}>Save Changes</button>
+      <div>
+        <input name="plantName" value={formData.plantName} onChange={handleChange} placeholder="Plant Name" />
+        <input name="plantAddress" value={formData.plantAddress} onChange={handleChange} placeholder="Address" />
+        <input name="contactPerson" value={formData.contactPerson} onChange={handleChange} placeholder="Contact Person" />
+        <input name="mobileNo" value={formData.mobileNo} onChange={handleChange} placeholder="Mobile No" />
+        <input name="remarks" value={formData.remarks} onChange={handleChange} placeholder="Remarks" />
       </div>
+
+      <button onClick={handleSave}>Save</button>
     </div>
   );
 }
+
