@@ -607,6 +607,15 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
 export default function PlantMaster() {
   const [formData, setFormData] = useState({
     plantId: null,
@@ -637,7 +646,7 @@ export default function PlantMaster() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API_URL}/api/plants`);
+      const res = await api.get('/api/plants');
       if (Array.isArray(res.data)) {
         setPlantList(res.data);
       } else {
@@ -646,7 +655,8 @@ export default function PlantMaster() {
       }
     } catch (err) {
       console.error('Error fetching plant list:', err);
-      setError('Failed to load plant list. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load plant list';
+      setError(`Error: ${errorMessage}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -665,7 +675,7 @@ export default function PlantMaster() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(`${API_URL}/api/plantmaster/${encodeURIComponent(selectedPlant.trim())}`);
+      const res = await api.get(`/api/plantmaster/${encodeURIComponent(selectedPlant.trim())}`);
       if (res.data && (res.data.PlantID || res.data.PlantId)) {
         setFormData({
           plantId: res.data.PlantID || res.data.PlantId,
@@ -681,7 +691,8 @@ export default function PlantMaster() {
       }
     } catch (err) {
       console.error('Error fetching plant:', err);
-      setError('Failed to load plant data. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load plant data';
+      setError(`Error: ${errorMessage}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -714,17 +725,18 @@ export default function PlantMaster() {
     
     try {
       if (formData.plantId) {
-        await axios.put(`${API_URL}/api/plantmaster/update/${formData.plantId}`, formData);
+        await api.put(`/api/plantmaster/update/${formData.plantId}`, formData);
         alert('✅ Plant updated successfully!');
       } else {
-        await axios.post(`${API_URL}/api/plantmaster`, formData);
+        await api.post('/api/plantmaster', formData);
         alert('✅ Plant data saved successfully!');
       }
       await fetchPlants();
       handleBack();
     } catch (err) {
       console.error('Error saving data:', err);
-      setError('Failed to save plant data. Please try again.');
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to save plant data';
+      setError(`Error: ${errorMessage}. Please try again.`);
     } finally {
       setLoading(false);
     }
