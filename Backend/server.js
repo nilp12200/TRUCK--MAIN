@@ -1353,7 +1353,7 @@ app.get('/api/plantmaster/:plantName', async (req, res) => {
       res.status(404).json({ error: 'Plant not found' });
     }
   } catch (err) {
-    console.error('Error fetching plant by name:', err);
+    console.error('Error fetching plant:', err);
     res.status(500).send('Server error');
   }
 });
