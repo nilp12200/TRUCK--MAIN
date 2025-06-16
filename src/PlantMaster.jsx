@@ -601,20 +601,10 @@
 //     </div>
 //   );
 // }
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
 
 export default function PlantMaster() {
   const [formData, setFormData] = useState({
@@ -625,82 +615,58 @@ export default function PlantMaster() {
     mobileNo: '',
     remarks: ''
   });
+
   const [plantList, setPlantList] = useState([]);
-  const [selectedPlant, setSelectedPlant] = useState('');
+  const [selectedPlantId, setSelectedPlantId] = useState('');
   const [showEditButton, setShowEditButton] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchPlants();
   }, []);
 
-  // Helper to get plant name robustly
-  const getPlantName = (plant) => {
-    if (!plant) return '';
-    return plant.PlantName || plant.plantname || plant.plant_name || plant || '';
-  };
-
   const fetchPlants = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const res = await api.get('/api/plants');
-      if (Array.isArray(res.data)) {
-        setPlantList(res.data);
-      } else {
-        console.error('Invalid plant list data received');
-        setError('Failed to load plant list');
-      }
+      const res = await axios.get(`${API_URL}/api/plants`);
+      setPlantList(res.data);
     } catch (err) {
       console.error('Error fetching plant list:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to load plant list';
-      setError(`Error: ${errorMessage}. Please try again.`);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handlePlantSelect = (e) => {
-    const plantName = e.target.value;
-    setSelectedPlant(plantName);
-    setShowEditButton(!!plantName);
-    setError('');
+    const id = parseInt(e.target.value, 10);
+    setSelectedPlantId(id);
+    setShowEditButton(!isNaN(id));
   };
 
   const handleEditClick = async () => {
-    if (!selectedPlant) return;
-    
-    setLoading(true);
-    setError('');
-    try {
-      const res = await api.get(`/api/plantmaster/${encodeURIComponent(selectedPlant.trim())}`);
-      if (res.data && (res.data.PlantID || res.data.PlantId)) {
-        setFormData({
-          plantId: res.data.PlantID || res.data.PlantId,
-          plantName: res.data.PlantName || res.data.plantname || res.data.plant_name || '',
-          plantAddress: res.data.PlantAddress || res.data.plantaddress || res.data.plant_address || '',
-          contactPerson: res.data.ContactPerson || res.data.contactperson || res.data.contact_person || '',
-          mobileNo: res.data.MobileNo || res.data.mobileno || res.data.mobile_no || '',
-          remarks: res.data.Remarks || res.data.remarks || ''
-        });
-        setEditMode(true);
-      } else {
-        setError('No valid plant data found');
-      }
-    } catch (err) {
-      console.error('Error fetching plant:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to load plant data';
-      setError(`Error: ${errorMessage}. Please try again.`);
-    } finally {
-      setLoading(false);
+  if (!selectedPlantId) return;
+  try {
+    const res = await axios.get(`${API_URL}/api/plantmaster/${selectedPlantId}`);
+    const data = res.data;
+
+    if (data && data.plantId) {
+      setFormData({
+        plantId: data.plantId,
+        plantName: data.plantName,
+        plantAddress: data.plantAddress,
+        contactPerson: data.contactPerson,
+        mobileNo: data.mobileNo,
+        remarks: data.remarks
+      });
+      setEditMode(true);
+    } else {
+      alert('❌ Invalid plant selected or no data found');
     }
-  };
+  } catch (err) {
+    console.error('Error fetching plant:', err);
+    alert('❌ Error fetching plant data');
+  }
+};
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
   };
 
   const handleBack = () => {
@@ -713,32 +679,25 @@ export default function PlantMaster() {
       remarks: ''
     });
     setEditMode(false);
-    setSelectedPlant('');
+    setSelectedPlantId('');
     setShowEditButton(false);
-    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    
     try {
       if (formData.plantId) {
-        await api.put(`/api/plantmaster/update/${formData.plantId}`, formData);
+        await axios.put(`${API_URL}/api/plant-master/${formData.plantId}`, formData);
         alert('✅ Plant updated successfully!');
       } else {
-        await api.post('/api/plantmaster', formData);
-        alert('✅ Plant data saved successfully!');
+        await axios.post(`${API_URL}/api/plant-master`, formData);
+        alert('✅ Plant saved successfully!');
       }
-      await fetchPlants();
+      fetchPlants();
       handleBack();
     } catch (err) {
-      console.error('Error saving data:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to save plant data';
-      setError(`Error: ${errorMessage}. Please try again.`);
-    } finally {
-      setLoading(false);
+      alert('❌ Error saving/updating plant');
+      console.error(err);
     }
   };
 
@@ -746,42 +705,34 @@ export default function PlantMaster() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-blue-100 p-4">
       <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-xl">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Plant Master</h2>
-        
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
-
         {!editMode ? (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Select Plant to Edit</label>
-              <select 
-                value={selectedPlant} 
-                onChange={handlePlantSelect} 
+              <select
+                value={selectedPlantId}
+                onChange={handlePlantSelect}
                 className="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-2"
-                disabled={loading}
               >
                 <option value="">-- Select --</option>
-                {[...new Set(plantList.map(getPlantName))].map((name, index) => (
-                  <option key={index} value={name}>{name}</option>
+                {plantList.map((plant) => (
+                  <option key={plant.plantId} value={plant.plantId}>
+                    {plant.plantName}
+                  </option>
                 ))}
               </select>
             </div>
             {showEditButton && (
               <button
                 onClick={handleEditClick}
-                className="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition disabled:opacity-50"
-                disabled={loading}
+                className="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition"
               >
-                {loading ? 'Loading...' : 'Edit Selected Plant'}
+                Edit Selected Plant
               </button>
             )}
             <button
               onClick={() => setEditMode(true)}
-              className="mt-2 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50"
-              disabled={loading}
+              className="mt-2 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
             >
               + Add New Plant
             </button>
@@ -798,7 +749,6 @@ export default function PlantMaster() {
                 placeholder="Enter Plant Name"
                 className="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-2"
                 required
-                disabled={loading}
               />
             </div>
             <div>
@@ -810,7 +760,6 @@ export default function PlantMaster() {
                 placeholder="Enter Plant Address"
                 rows="2"
                 className="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-2"
-                disabled={loading}
               ></textarea>
             </div>
             <div>
@@ -822,7 +771,6 @@ export default function PlantMaster() {
                 onChange={handleChange}
                 placeholder="Enter Contact Person Name"
                 className="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-2"
-                disabled={loading}
               />
             </div>
             <div>
@@ -834,7 +782,6 @@ export default function PlantMaster() {
                 onChange={handleChange}
                 placeholder="Enter Mobile Number"
                 className="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-2"
-                disabled={loading}
               />
             </div>
             <div>
@@ -846,23 +793,13 @@ export default function PlantMaster() {
                 placeholder="Enter Remarks"
                 rows="2"
                 className="mt-1 block w-full rounded-lg border border-gray-300 shadow-sm p-2"
-                disabled={loading}
               ></textarea>
             </div>
             <div className="flex justify-between mt-6">
-              <button 
-                type="submit" 
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : (formData.plantId ? 'Update' : 'Save')}
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                {formData.plantId ? 'Update' : 'Save'}
               </button>
-              <button 
-                type="button" 
-                onClick={handleBack} 
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition disabled:opacity-50"
-                disabled={loading}
-              >
+              <button type="button" onClick={handleBack} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
                 Back
               </button>
             </div>
