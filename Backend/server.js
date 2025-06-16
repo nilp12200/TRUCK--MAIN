@@ -1309,22 +1309,25 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// 🌱 Plant Master API
 app.get('/api/plantmaster/:plantName', async (req, res) => {
   const plantName = req.params.plantName?.trim();
   try {
-    const result = await pool.query(
-      `SELECT * FROM PlantMaster WHERE LOWER(TRIM(PlantName)) = LOWER(TRIM($1)) LIMIT 1`,
-      [plantName]
-    );
-    if (result.rows.length > 0) {
-      res.json(result.rows[0]);
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('plantName', sql.VarChar, plantName)
+      .query(`
+        SELECT TOP 1 * FROM PlantMaster
+        WHERE LOWER(LTRIM(RTRIM(PlantName))) = LOWER(LTRIM(RTRIM(@plantName)))
+      `);
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset[0]);
     } else {
       res.status(404).json({ message: 'Plant not found' });
     }
   } catch (err) {
-    console.error('Error fetching plant:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Error fetching plant:', err.message);
+    res.status(500).json({ error: 'Failed to fetch plant' });
   }
 });
 
@@ -1351,18 +1354,22 @@ app.put('/api/plantmaster/:plantId', async (req, res) => {
 app.get('/api/plantmaster/:plantName', async (req, res) => {
   const plantName = req.params.plantName?.trim();
   try {
-    const result = await pool.query(
-      `SELECT * FROM PlantMaster WHERE LOWER(TRIM(PlantName)) = LOWER(TRIM($1)) LIMIT 1`,
-      [plantName]
-    );
-    if (result.rows.length > 0) {
-      res.json(result.rows[0]);
+    const pool = await sql.connect(dbConfig);
+    const result = await pool.request()
+      .input('plantName', sql.VarChar, plantName)
+      .query(`
+        SELECT TOP 1 * FROM PlantMaster
+        WHERE LOWER(LTRIM(RTRIM(PlantName))) = LOWER(LTRIM(RTRIM(@plantName)))
+      `);
+
+    if (result.recordset.length > 0) {
+      res.json(result.recordset[0]);
     } else {
-      res.status(404).json({ error: 'Plant not found' });
+      res.status(404).json({ message: 'Plant not found' });
     }
   } catch (err) {
-    console.error('Error fetching plant:', err);
-    res.status(500).send('Server error');
+    console.error('❌ Error fetching plant:', err.message);
+    res.status(500).json({ error: 'Failed to fetch plant' });
   }
 });
 
